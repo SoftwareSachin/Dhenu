@@ -134,7 +134,7 @@ export default function Chat() {
             <Bot className="text-white" size={20} />
           </div>
           <div>
-            <h1 className="text-white font-semibold">Farmer Copilot</h1>
+            <h1 className="text-white font-semibold">PashuAI</h1>
             <p className="text-white/80 text-xs">Online • Ready to help</p>
           </div>
         </div>
@@ -153,7 +153,7 @@ export default function Chat() {
             <div className="w-20 h-20 bg-accent/10 rounded-full flex items-center justify-center mb-4">
               <Bot className="text-accent" size={32} />
             </div>
-            <h2 className="text-2xl font-bold text-foreground mb-2">Welcome to Farmer Copilot</h2>
+            <h2 className="text-2xl font-bold text-foreground mb-2">Welcome to PashuAI</h2>
             <p className="text-muted-foreground max-w-md">
               I can help with crop management, livestock care, disease detection, market prices, and more. Ask me anything!
             </p>

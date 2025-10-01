@@ -13,7 +13,7 @@ export default function Header() {
               <Sprout className="text-primary-foreground" size={24} strokeWidth={1.75} />
             </div>
             <div>
-              <h1 className="text-lg font-bold text-foreground">Farmer Copilot</h1>
+              <h1 className="text-lg font-bold text-foreground">PashuAI</h1>
               <p className="text-xs text-muted-foreground">AI Agriculture Advisory</p>
             </div>
           </Link>

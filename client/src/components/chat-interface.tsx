@@ -22,7 +22,7 @@ export default function ChatInterface() {
           <div>
             <div className="inline-flex items-center space-x-2 px-3 py-1 bg-primary/10 rounded-full mb-4">
               <CheckCircle className="text-primary" size={16} />
-              <span className="text-primary text-sm font-medium">Farmer Copilot</span>
+              <span className="text-primary text-sm font-medium">PashuAI</span>
             </div>
             <h2 className="text-4xl font-bold text-foreground mb-4">
               Your AI Agricultural Assistant
@@ -78,7 +78,7 @@ export default function ChatInterface() {
                   <Bot className="text-white" size={20} />
                 </div>
                 <div>
-                  <h3 className="text-white font-semibold">Farmer Copilot</h3>
+                  <h3 className="text-white font-semibold">PashuAI</h3>
                   <p className="text-white/80 text-xs">Online • Ready to help</p>
                 </div>
               </div>

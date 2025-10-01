@@ -40,8 +40,8 @@ const features = [
   {
     icon: BookOpen,
     title: "Knowledge Base",
-    description: "Access comprehensive topics covering agriculture, livestock, and sustainable practices.",
-    tags: ["Expert Tips", "Resources"],
+    description: "Access 4000+ comprehensive topics covering agriculture, livestock, and sustainable practices.",
+    tags: ["4000+ Topics", "Expert Tips"],
     color: "accent"
   }
 ];

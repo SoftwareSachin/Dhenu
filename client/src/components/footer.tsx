@@ -11,7 +11,7 @@ export default function Footer() {
               <div className="w-9 h-9 bg-primary rounded-[10px] flex items-center justify-center">
                 <Sprout className="text-primary-foreground" size={20} strokeWidth={1.75} />
               </div>
-              <span className="font-bold text-foreground text-lg">Farmer Copilot</span>
+              <span className="font-bold text-foreground text-lg">PashuAI</span>
             </div>
             <p className="text-sm text-muted-foreground leading-relaxed">
               AI-powered agricultural and livestock advisory platform for farmers worldwide.
@@ -21,7 +21,7 @@ export default function Footer() {
           <div>
             <h4 className="font-semibold text-foreground mb-4">Platform</h4>
             <ul className="space-y-3 text-sm text-muted-foreground">
-              <li><a href="#" className="hover:text-foreground transition-colors duration-200">Farmer Copilot</a></li>
+              <li><a href="#" className="hover:text-foreground transition-colors duration-200">PashuAI</a></li>
               <li><a href="#" className="hover:text-foreground transition-colors duration-200">AgriCopilot</a></li>
               <li><a href="#" className="hover:text-foreground transition-colors duration-200">Dhenu Models</a></li>
               <li><a href="#" className="hover:text-foreground transition-colors duration-200">API Access</a></li>
@@ -51,7 +51,7 @@ export default function Footer() {
 
         <div className="border-t border-border pt-8 flex flex-col md:flex-row justify-between items-center">
           <p className="text-sm text-muted-foreground">
-            © 2024 Farmer Copilot by KissanAI. All rights reserved.
+            © 2025 PashuAI by KissanAI. All rights reserved.
           </p>
           <div className="flex items-center space-x-5 mt-4 md:mt-0">
             <a href="#" className="text-muted-foreground hover:text-foreground transition-colors duration-200" aria-label="X (Twitter)">
