@@ -1,4 +1,4 @@
-import { openai } from "../openai";
+import { gemini } from "../gemini";
 
 export interface ChatMessage {
   role: "system" | "user" | "assistant";
@@ -22,16 +22,25 @@ ${language !== "en" ? `Respond in ${language} language.` : ""}
 Be concise, practical, and farmer-friendly in your responses.`;
 
   try {
-    // the newest OpenAI model is "gpt-5" which was released August 7, 2025. do not change this unless explicitly requested by the user
-    const response = await openai.chat.completions.create({
-      model: "gpt-5",
-      messages: [
-        { role: "system", content: systemPrompt },
-        ...messages,
-      ],
+    // Build conversation history for Gemini
+    const conversationParts = messages.map(msg => {
+      if (msg.role === "system") return null;
+      return {
+        role: msg.role === "assistant" ? "model" : "user",
+        parts: [{ text: msg.content }],
+      };
+    }).filter(Boolean);
+
+    // Note that the newest Gemini model series is "gemini-2.5-flash" or "gemini-2.5-pro"
+    const response = await gemini.models.generateContent({
+      model: "gemini-2.5-pro",
+      config: {
+        systemInstruction: systemPrompt,
+      },
+      contents: conversationParts as any,
     });
 
-    return response.choices[0].message.content || "I apologize, but I couldn't generate a response. Please try again.";
+    return response.text || "I apologize, but I couldn't generate a response. Please try again.";
   } catch (error: any) {
     console.error("Chat generation error:", error);
     throw new Error(`Failed to generate chat response: ${error.message}`);

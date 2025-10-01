@@ -1,4 +1,4 @@
-import { openai } from "../openai";
+import { gemini } from "../gemini";
 
 export interface VisionAnalysisResult {
   diagnosis: string;
@@ -34,35 +34,44 @@ Respond in JSON format with this structure:
 }`;
 
   try {
-    // the newest OpenAI model is "gpt-5" which was released August 7, 2025. do not change this unless explicitly requested by the user
-    const response = await openai.chat.completions.create({
-      model: "gpt-5",
-      messages: [
-        {
-          role: "system",
-          content: systemPrompt,
+    const contents = [
+      {
+        inlineData: {
+          data: base64Image,
+          mimeType: "image/jpeg",
         },
-        {
-          role: "user",
-          content: [
-            {
-              type: "text",
-              text: `Analyze this agricultural image. Context: ${context}`,
+      },
+      `Analyze this agricultural image. Context: ${context}`,
+    ];
+
+    // Note that the newest Gemini model series is "gemini-2.5-flash" or "gemini-2.5-pro"
+    const response = await gemini.models.generateContent({
+      model: "gemini-2.5-pro",
+      config: {
+        systemInstruction: systemPrompt,
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: "object",
+          properties: {
+            diagnosis: { type: "string" },
+            confidence: { type: "number" },
+            treatment: { 
+              type: "array",
+              items: { type: "string" }
             },
-            {
-              type: "image_url",
-              image_url: {
-                url: `data:image/jpeg;base64,${base64Image}`,
-              },
+            prevention: { 
+              type: "array",
+              items: { type: "string" }
             },
-          ],
+            description: { type: "string" },
+          },
+          required: ["diagnosis", "confidence", "treatment", "prevention", "description"],
         },
-      ],
-      response_format: { type: "json_object" },
-      max_completion_tokens: 2048,
+      },
+      contents: contents,
     });
 
-    const result = JSON.parse(response.choices[0].message.content || "{}");
+    const result = JSON.parse(response.text || "{}");
     
     return {
       diagnosis: result.diagnosis || "Unknown condition",
