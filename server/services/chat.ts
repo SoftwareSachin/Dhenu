@@ -40,6 +40,7 @@ Be concise, practical, and farmer-friendly in your responses.`;
       contents: conversationParts as any,
     });
 
+    // response.text is a getter property, not a method
     return response.text || "I apologize, but I couldn't generate a response. Please try again.";
   } catch (error: any) {
     console.error("Chat generation error:", error);

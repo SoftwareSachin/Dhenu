@@ -34,21 +34,27 @@ Respond in JSON format with this structure:
 }`;
 
   try {
-    const contents = [
-      {
-        inlineData: {
-          data: base64Image,
-          mimeType: "image/jpeg",
+    // Correct Gemini multimodal format: single content object with role and parts array
+    const contents = {
+      role: "user",
+      parts: [
+        {
+          inlineData: {
+            data: base64Image,
+            mimeType: "image/jpeg",
+          },
         },
-      },
-      `Analyze this agricultural image. Context: ${context}`,
-    ];
+        {
+          text: `Analyze this agricultural image. Context: ${context}`,
+        },
+      ],
+    };
 
     // Note that the newest Gemini model series is "gemini-2.5-flash" or "gemini-2.5-pro"
     const response = await gemini.models.generateContent({
       model: "gemini-2.5-pro",
-      config: {
-        systemInstruction: systemPrompt,
+      systemInstruction: systemPrompt,
+      generationConfig: {
         responseMimeType: "application/json",
         responseSchema: {
           type: "object",
@@ -68,10 +74,12 @@ Respond in JSON format with this structure:
           required: ["diagnosis", "confidence", "treatment", "prevention", "description"],
         },
       },
-      contents: contents,
+      contents: [contents],
     });
 
-    const result = JSON.parse(response.text || "{}");
+    // Use response.text() method if available, otherwise fallback
+    const responseText = typeof response.text === 'function' ? response.text() : response.text;
+    const result = JSON.parse(responseText || "{}");
     
     return {
       diagnosis: result.diagnosis || "Unknown condition",

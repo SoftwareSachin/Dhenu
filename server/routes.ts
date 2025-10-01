@@ -120,22 +120,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Transcribe voice input
+  // Transcribe voice input (disabled - uses browser Web Speech API instead)
   app.post("/api/transcribe", upload.single("audio"), async (req, res) => {
-    try {
-      if (!req.file) {
-        return res.status(400).json({ message: "No audio file provided" });
-      }
-
-      const transcription = await transcribeAudio(req.file.path);
-
-      // Clean up audio file
-      fs.unlinkSync(req.file.path);
-
-      res.json({ transcription });
-    } catch (error: any) {
-      res.status(500).json({ message: error.message });
-    }
+    // Gemini doesn't support audio transcription
+    // Voice input is handled client-side using browser's Web Speech API
+    res.status(400).json({ 
+      message: "Server-side audio transcription is not available. Please use the voice input button which uses browser-based speech recognition." 
+    });
   });
 
   // Serve uploaded files

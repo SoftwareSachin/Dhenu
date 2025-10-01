@@ -1,5 +1,5 @@
 import { Sprout } from "lucide-react";
-import { SiTwitter, SiLinkedin, SiGithub } from "react-icons/si";
+import { SiX, SiLinkedin, SiGithub } from "react-icons/si";
 
 export default function Footer() {
   return (
@@ -54,8 +54,8 @@ export default function Footer() {
             © 2024 Farmer Copilot by KissanAI. All rights reserved.
           </p>
           <div className="flex items-center space-x-4 mt-4 md:mt-0">
-            <a href="#" className="text-muted-foreground hover:text-foreground transition-colors" aria-label="Twitter">
-              <SiTwitter size={20} />
+            <a href="#" className="text-muted-foreground hover:text-foreground transition-colors" aria-label="X (Twitter)">
+              <SiX size={20} />
             </a>
             <a href="#" className="text-muted-foreground hover:text-foreground transition-colors" aria-label="LinkedIn">
               <SiLinkedin size={20} />
