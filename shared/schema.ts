@@ -1,35 +1,36 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, timestamp, jsonb, integer } from "drizzle-orm/pg-core";
+import { sqliteTable, text, integer, blob } from "drizzle-orm/sqlite-core";
 import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
+import { randomUUID } from "crypto";
 
-export const users = pgTable("users", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+export const users = sqliteTable("users", {
+  id: text("id").primaryKey().$defaultFn(() => randomUUID()),
   username: text("username").notNull().unique(),
   password: text("password").notNull(),
   language: text("language").notNull().default("en"),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
+  createdAt: integer("created_at", { mode: "timestamp" }).$defaultFn(() => new Date()),
 });
 
-export const conversations = pgTable("conversations", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: varchar("user_id").references(() => users.id),
+export const conversations = sqliteTable("conversations", {
+  id: text("id").primaryKey().$defaultFn(() => randomUUID()),
+  userId: text("user_id").references(() => users.id),
   title: text("title").notNull(),
   language: text("language").notNull().default("en"),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  createdAt: integer("created_at", { mode: "timestamp" }).$defaultFn(() => new Date()),
+  updatedAt: integer("updated_at", { mode: "timestamp" }).$defaultFn(() => new Date()),
 });
 
-export const messages = pgTable("messages", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  conversationId: varchar("conversation_id").references(() => conversations.id).notNull(),
+export const messages = sqliteTable("messages", {
+  id: text("id").primaryKey().$defaultFn(() => randomUUID()),
+  conversationId: text("conversation_id").references(() => conversations.id).notNull(),
   role: text("role").notNull(), // 'user' or 'assistant'
   content: text("content").notNull(),
   imageUrl: text("image_url"),
   audioUrl: text("audio_url"),
-  metadata: jsonb("metadata"), // for storing analysis results, confidence scores, etc.
-  createdAt: timestamp("created_at").defaultNow().notNull(),
+  metadata: text("metadata", { mode: "json" }), // for storing analysis results, confidence scores, etc.
+  createdAt: integer("created_at", { mode: "timestamp" }).$defaultFn(() => new Date()),
 });
 
 export const conversationsRelations = relations(conversations, ({ many, one }) => ({

@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { Image as ImageIcon, X } from "lucide-react";
+import { Image as ImageIcon, X, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 
@@ -10,20 +10,19 @@ interface ImageUploadProps {
 
 export default function ImageUpload({ onImageSelect, disabled }: ImageUploadProps) {
   const [preview, setPreview] = useState<string | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const dropZoneRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
+  const validateAndProcessFile = (file: File) => {
     if (!file.type.startsWith("image/")) {
       toast({
         title: "Invalid File",
         description: "Please select an image file.",
         variant: "destructive",
       });
-      return;
+      return false;
     }
 
     if (file.size > 10 * 1024 * 1024) {
@@ -32,7 +31,7 @@ export default function ImageUpload({ onImageSelect, disabled }: ImageUploadProp
         description: "Please select an image smaller than 10MB.",
         variant: "destructive",
       });
-      return;
+      return false;
     }
 
     const reader = new FileReader();
@@ -42,6 +41,44 @@ export default function ImageUpload({ onImageSelect, disabled }: ImageUploadProp
     reader.readAsDataURL(file);
 
     onImageSelect(file);
+    return true;
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    validateAndProcessFile(file);
+  };
+
+  const handleDragEnter = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!disabled) setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!disabled) setIsDragging(true);
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    
+    if (disabled) return;
+    
+    const files = e.dataTransfer.files;
+    if (files.length > 0) {
+      validateAndProcessFile(files[0]);
+    }
   };
 
   const clearImage = () => {
@@ -67,7 +104,15 @@ export default function ImageUpload({ onImageSelect, disabled }: ImageUploadProp
           </Button>
         </div>
       ) : (
-        <>
+        <div
+          ref={dropZoneRef}
+          onDragEnter={handleDragEnter}
+          onDragLeave={handleDragLeave}
+          onDragOver={handleDragOver}
+          onDrop={handleDrop}
+          className={`relative ${isDragging ? 'ring-2 ring-primary ring-offset-2' : ''}`}
+          data-testid="dropzone"
+        >
           <input
             ref={fileInputRef}
             type="file"
@@ -84,10 +129,16 @@ export default function ImageUpload({ onImageSelect, disabled }: ImageUploadProp
             disabled={disabled}
             title="Upload Image"
             data-testid="button-image-upload"
+            className={`${isDragging ? 'bg-primary/10' : ''}`}
           >
-            <ImageIcon size={20} />
+            {isDragging ? <Upload size={20} /> : <ImageIcon size={20} />}
           </Button>
-        </>
+          {isDragging && (
+            <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 whitespace-nowrap bg-background border border-border rounded-md px-2 py-1 text-xs">
+              Drop image here
+            </div>
+          )}
+        </div>
       )}
     </div>
   );

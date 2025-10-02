@@ -1,4 +1,5 @@
 import { gemini } from "../gemini";
+import { SchemaType } from "@google/generative-ai";
 
 export interface VisionAnalysisResult {
   diagnosis: string;
@@ -51,25 +52,25 @@ Respond in JSON format with this structure:
     };
 
     // Note that the newest Gemini model series is "gemini-2.5-flash" or "gemini-2.5-pro"
-    const response = await gemini.models.generateContent({
-      model: "gemini-2.5-pro",
+    const model = gemini.getGenerativeModel({ model: "gemini-2.5-pro" });
+    const response = await model.generateContent({
       systemInstruction: systemPrompt,
       generationConfig: {
         responseMimeType: "application/json",
         responseSchema: {
-          type: "object",
+          type: SchemaType.OBJECT,
           properties: {
-            diagnosis: { type: "string" },
-            confidence: { type: "number" },
+            diagnosis: { type: SchemaType.STRING },
+            confidence: { type: SchemaType.NUMBER },
             treatment: { 
-              type: "array",
-              items: { type: "string" }
+              type: SchemaType.ARRAY,
+              items: { type: SchemaType.STRING }
             },
             prevention: { 
-              type: "array",
-              items: { type: "string" }
+              type: SchemaType.ARRAY,
+              items: { type: SchemaType.STRING }
             },
-            description: { type: "string" },
+            description: { type: SchemaType.STRING },
           },
           required: ["diagnosis", "confidence", "treatment", "prevention", "description"],
         },
@@ -78,7 +79,7 @@ Respond in JSON format with this structure:
     });
 
     // Use response.text() method if available, otherwise fallback
-    const responseText = typeof response.text === 'function' ? response.text() : response.text;
+    const responseText = response.response.text();
     const result = JSON.parse(responseText || "{}");
     
     return {

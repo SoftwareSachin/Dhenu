@@ -17,7 +17,10 @@ export default function Chat() {
   const [inputMessage, setInputMessage] = useState("");
   const [selectedLanguage, setSelectedLanguage] = useState("en");
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [isStreaming, setIsStreaming] = useState(false);
+  const [streamingMessage, setStreamingMessage] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const eventSourceRef = useRef<EventSource | null>(null);
   const { toast } = useToast();
 
   const { data: messages = [], isLoading: messagesLoading } = useQuery<Message[]>({
@@ -60,6 +63,116 @@ export default function Chat() {
       });
     },
   });
+  
+  // New streaming message function
+  const sendStreamingMessage = async (content: string) => {
+    if (!conversationId) return;
+    
+    try {
+      setIsStreaming(true);
+      setStreamingMessage("");
+      setInputMessage("");
+      
+      // Close any existing connection
+      if (eventSourceRef.current) {
+        eventSourceRef.current.close();
+      }
+      
+      // Create a new EventSource connection
+      const params = new URLSearchParams({
+        conversationId: conversationId,
+        content: content,
+        language: selectedLanguage
+      });
+      
+      try {
+        const eventSource = new EventSource(`/api/chat/stream?${params.toString()}`);
+        eventSourceRef.current = eventSource;
+        
+        // Set a timeout to handle cases where the connection is established but no data is received
+        const connectionTimeout = setTimeout(() => {
+          if (eventSourceRef.current) {
+            eventSourceRef.current.close();
+            setIsStreaming(false);
+            toast({
+              title: "Connection Timeout",
+              description: "No response received from the server. Please try again.",
+              variant: "destructive",
+            });
+          }
+        }, 15000); // 15 seconds timeout
+        
+        eventSource.onmessage = (event) => {
+          // Clear the timeout since we received a message
+          clearTimeout(connectionTimeout);
+          
+          try {
+            const data = JSON.parse(event.data);
+            
+            if (data.error) {
+              console.error("Server error:", data.error);
+              toast({
+                title: "Error",
+                description: "Failed to generate response. Please try again.",
+                variant: "destructive",
+              });
+              eventSource.close();
+              setIsStreaming(false);
+              return;
+            }
+            
+            if (data.done) {
+              eventSource.close();
+              setIsStreaming(false);
+              setStreamingMessage(null);
+              queryClient.invalidateQueries({ queryKey: ["/api/conversations", conversationId, "messages"] });
+              return;
+            }
+            
+            if (data.chunk) {
+              setStreamingMessage((prev) => (prev || "") + data.chunk);
+            }
+          } catch (parseError) {
+            console.error("Error parsing SSE data:", parseError);
+            eventSource.close();
+            setIsStreaming(false);
+            toast({
+              title: "Data Error",
+              description: "Received invalid data from the server.",
+              variant: "destructive",
+            });
+          }
+        };
+        
+        eventSource.onerror = (error) => {
+          clearTimeout(connectionTimeout);
+          console.error("EventSource error:", error);
+          eventSource.close();
+          setIsStreaming(false);
+          toast({
+            title: "Connection Error",
+            description: "Lost connection to the server. Please try again.",
+            variant: "destructive",
+          });
+        };
+      } catch (connectionError) {
+        console.error("Error creating EventSource:", connectionError);
+        setIsStreaming(false);
+        toast({
+          title: "Connection Error",
+          description: "Failed to establish connection with the server.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      setIsStreaming(false);
+      toast({
+        title: "Error",
+        description: "Failed to send message. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
 
   const analyzeImageMutation = useMutation({
     mutationFn: async ({ image, context }: { image: File; context: string }) => {
@@ -113,7 +226,21 @@ export default function Chat() {
       });
       setInputMessage("");
     } else {
-      sendMessageMutation.mutate({ content: inputMessage.trim() });
+      // Use streaming for better user experience
+      const message = inputMessage.trim();
+      
+      // Save user message first
+      await apiRequest("POST", "/api/conversations/" + conversationId + "/messages", {
+        role: "user",
+        content: message,
+      });
+      
+      // Refresh messages to show user message
+      queryClient.invalidateQueries({ queryKey: ["/api/conversations", conversationId, "messages"] });
+      
+      // Start streaming response
+      sendStreamingMessage(message);
+      setInputMessage("");
     }
   };
 
@@ -159,37 +286,51 @@ export default function Chat() {
             </p>
           </div>
         ) : (
-          messages.map((message, index) => (
-            <div
-              key={message.id}
-              className={`flex items-start space-x-3 message-enter ${
-                message.role === "user" ? "justify-end" : ""
-              }`}
-              data-testid={`message-${index}`}
-            >
-              {message.role === "assistant" && (
+          <>
+            {messages.map((message, index) => (
+              <div
+                key={message.id}
+                className={`flex items-start space-x-3 message-enter ${
+                  message.role === "user" ? "justify-end" : ""
+                }`}
+                data-testid={`message-${index}`}
+              >
+                {message.role === "assistant" && (
+                  <div className="w-8 h-8 bg-accent rounded-full flex items-center justify-center flex-shrink-0">
+                    <Bot className="text-white" size={16} />
+                  </div>
+                )}
+                <div
+                  className={`rounded-2xl p-3 elevation-1 max-w-[80%] ${
+                    message.role === "user"
+                      ? "bg-primary text-primary-foreground rounded-br-sm"
+                      : "bg-card text-card-foreground rounded-bl-sm"
+                  }`}
+                >
+                  {message.imageUrl && (
+                    <img
+                      src={message.imageUrl}
+                      alt="Uploaded"
+                      className="rounded-lg mb-2 max-w-full"
+                    />
+                  )}
+                  <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                </div>
+              </div>
+            ))}
+            
+            {/* Streaming message display */}
+            {isStreaming && streamingMessage !== null && (
+              <div className="flex items-start space-x-3 message-enter">
                 <div className="w-8 h-8 bg-accent rounded-full flex items-center justify-center flex-shrink-0">
                   <Bot className="text-white" size={16} />
                 </div>
-              )}
-              <div
-                className={`rounded-2xl p-3 elevation-1 max-w-[80%] ${
-                  message.role === "user"
-                    ? "bg-primary text-primary-foreground rounded-br-sm"
-                    : "bg-card text-card-foreground rounded-bl-sm"
-                }`}
-              >
-                {message.imageUrl && (
-                  <img
-                    src={message.imageUrl}
-                    alt="Uploaded"
-                    className="rounded-lg mb-2 max-w-full"
-                  />
-                )}
-                <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                <div className="rounded-2xl p-3 elevation-1 max-w-[80%] bg-card text-card-foreground rounded-bl-sm">
+                  <p className="text-sm whitespace-pre-wrap">{streamingMessage}<span className="animate-pulse">▋</span></p>
+                </div>
               </div>
-            </div>
-          ))
+            )}
+          </>
         )}
         <div ref={messagesEndRef} />
       </div>
