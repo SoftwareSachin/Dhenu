@@ -218,6 +218,15 @@ export default function Chat() {
 
   const handleSendMessage = async () => {
     if (!inputMessage.trim() && !selectedImage) return;
+    
+    // Prevent sending if conversation hasn't been created yet
+    if (!conversationId) {
+      toast({
+        title: "Please wait",
+        description: "Initializing conversation...",
+      });
+      return;
+    }
 
     if (selectedImage) {
       analyzeImageMutation.mutate({
@@ -339,20 +348,20 @@ export default function Chat() {
         <div className="flex items-center space-x-2 max-w-4xl mx-auto">
           <ImageUpload
             onImageSelect={setSelectedImage}
-            disabled={sendMessageMutation.isPending || analyzeImageMutation.isPending}
+            disabled={!conversationId || sendMessageMutation.isPending || analyzeImageMutation.isPending}
           />
           <VoiceInput
             onTranscription={handleVoiceTranscription}
-            disabled={sendMessageMutation.isPending || analyzeImageMutation.isPending}
+            disabled={!conversationId || sendMessageMutation.isPending || analyzeImageMutation.isPending}
           />
           <Input
             type="text"
-            placeholder="Type your question..."
+            placeholder={!conversationId ? "Initializing..." : "Type your question..."}
             className="flex-1"
             value={inputMessage}
             onChange={(e) => setInputMessage(e.target.value)}
             onKeyPress={(e) => e.key === "Enter" && handleSendMessage()}
-            disabled={sendMessageMutation.isPending || analyzeImageMutation.isPending}
+            disabled={!conversationId || sendMessageMutation.isPending || analyzeImageMutation.isPending}
             data-testid="input-message"
           />
           <Button
@@ -360,6 +369,7 @@ export default function Chat() {
             size="icon"
             onClick={handleSendMessage}
             disabled={
+              !conversationId ||
               (!inputMessage.trim() && !selectedImage) ||
               sendMessageMutation.isPending ||
               analyzeImageMutation.isPending
