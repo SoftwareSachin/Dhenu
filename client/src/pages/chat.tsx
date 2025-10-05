@@ -21,6 +21,7 @@ export default function Chat() {
   const [streamingMessage, setStreamingMessage] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const eventSourceRef = useRef<EventSource | null>(null);
+  const hasAttemptedCreation = useRef(false);
   const { toast } = useToast();
 
   const { data: messages = [], isLoading: messagesLoading } = useQuery<Message[]>({
@@ -39,6 +40,14 @@ export default function Chat() {
     },
     onSuccess: (data: Conversation) => {
       setConversationId(data.id);
+    },
+    onError: (error) => {
+      console.error("Failed to create conversation:", error);
+      toast({
+        title: "Connection Error",
+        description: "Failed to initialize chat. Please refresh the page.",
+        variant: "destructive",
+      });
     },
   });
 
@@ -207,10 +216,11 @@ export default function Chat() {
   });
 
   useEffect(() => {
-    if (!conversationId) {
+    if (!conversationId && !hasAttemptedCreation.current) {
+      hasAttemptedCreation.current = true;
       createConversationMutation.mutate();
     }
-  }, []);
+  }, [conversationId]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
