@@ -5,7 +5,6 @@ import { analyzeCropOrLivestockImage } from "./services/vision";
 import multer from "multer";
 import { put } from "@vercel/blob";
 import { insertConversationSchema, insertMessageSchema } from "@shared/schema";
-import { serveStatic } from "./vite";
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -268,9 +267,5 @@ app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
   const message = err.message || "Internal Server Error";
   res.status(status).json({ message });
 });
-
-if (!process.env.VERCEL) {
-  serveStatic(app);
-}
 
 export default app;
