@@ -269,6 +269,8 @@ app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
   res.status(status).json({ message });
 });
 
-serveStatic(app);
+if (!process.env.VERCEL) {
+  serveStatic(app);
+}
 
 export default app;
