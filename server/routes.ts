@@ -5,19 +5,11 @@ import { generateChatResponse, generateStreamingChatResponse } from "./services/
 import { analyzeCropOrLivestockImage } from "./services/vision";
 import { transcribeAudio } from "./services/voice";
 import multer from "multer";
-import path from "path";
-import fs from "fs";
+import { put } from "@vercel/blob";
 import { insertConversationSchema, insertMessageSchema } from "@shared/schema";
 
-// Configure multer storage with file type validation
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, "uploads/");
-  },
-  filename: (req, file, cb) => {
-    cb(null, file.fieldname + "-" + Date.now() + path.extname(file.originalname));
-  }
-});
+// Configure multer to use memory storage for Vercel Blob
+const storage = multer.memoryStorage();
 
 // File filter to accept all image formats
 const fileFilter = (req: any, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
@@ -209,24 +201,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const { conversationId, context = "crop disease", language = "en" } = req.body;
 
-      // Read image as base64
-      const imageBuffer = fs.readFileSync(req.file.path);
-      const base64Image = imageBuffer.toString("base64");
+      // Upload image to Vercel Blob
+      const blob = await put(req.file.originalname, req.file.buffer, {
+        access: 'public',
+        addRandomSuffix: true,
+        token: process.env.BLOB_READ_WRITE_TOKEN,
+      });
+
+      // Convert buffer to base64 for AI analysis
+      const base64Image = req.file.buffer.toString("base64");
 
       // Analyze image
       const analysis = await analyzeCropOrLivestockImage(base64Image, context, language);
 
-      // Save analysis as message
+      // Save analysis as message with Blob URL
       const message = await dbStorage.createMessage({
         conversationId,
         role: "assistant",
         content: `**AI Vision Analysis**\n\n**Diagnosis:** ${analysis.diagnosis}\n**Confidence:** ${analysis.confidence}%\n\n**Treatment:**\n${analysis.treatment.map((t, i) => `${i + 1}. ${t}`).join("\n")}\n\n**Prevention:**\n${analysis.prevention.map((p, i) => `${i + 1}. ${p}`).join("\n")}\n\n**Description:** ${analysis.description}`,
-        imageUrl: `/uploads/${req.file.filename}`,
+        imageUrl: blob.url,
         metadata: analysis,
       });
-
-      // Clean up uploaded file after processing
-      // Note: In production, you'd want to save this to cloud storage
       
       res.json({ message, analysis });
     } catch (error: any) {
@@ -255,16 +250,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         message: error.message || "Failed to process audio",
         transcription: "" 
       });
-    }
-  });
-
-  // Serve uploaded files
-  app.use("/uploads", (req, res, next) => {
-    const filePath = path.join(process.cwd(), "uploads", req.path);
-    if (fs.existsSync(filePath)) {
-      res.sendFile(filePath);
-    } else {
-      res.status(404).json({ message: "File not found" });
     }
   });
 

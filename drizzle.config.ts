@@ -1,13 +1,12 @@
 import type { Config } from "drizzle-kit";
 import * as dotenv from "dotenv";
-import path from "path";
 dotenv.config();
 
 export default {
   schema: "./shared/schema.ts",
   out: "./drizzle",
-  dialect: "sqlite",
+  dialect: "postgresql",
   dbCredentials: {
-    url: path.join(process.cwd(), "dhenu.db"),
+    url: process.env.DATABASE_URL!,
   },
 } satisfies Config;

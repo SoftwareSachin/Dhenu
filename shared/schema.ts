@@ -1,36 +1,35 @@
 import { sql } from "drizzle-orm";
-import { sqliteTable, text, integer, blob } from "drizzle-orm/sqlite-core";
+import { pgTable, text, timestamp, jsonb, uuid } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
-import { randomUUID } from "crypto";
 
-export const users = sqliteTable("users", {
-  id: text("id").primaryKey().$defaultFn(() => randomUUID()),
+export const users = pgTable("users", {
+  id: uuid("id").primaryKey().defaultRandom(),
   username: text("username").notNull().unique(),
   password: text("password").notNull(),
   language: text("language").notNull().default("en"),
-  createdAt: integer("created_at", { mode: "timestamp" }).$defaultFn(() => new Date()),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
-export const conversations = sqliteTable("conversations", {
-  id: text("id").primaryKey().$defaultFn(() => randomUUID()),
-  userId: text("user_id").references(() => users.id),
+export const conversations = pgTable("conversations", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id").references(() => users.id),
   title: text("title").notNull(),
   language: text("language").notNull().default("en"),
-  createdAt: integer("created_at", { mode: "timestamp" }).$defaultFn(() => new Date()),
-  updatedAt: integer("updated_at", { mode: "timestamp" }).$defaultFn(() => new Date()),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
-export const messages = sqliteTable("messages", {
-  id: text("id").primaryKey().$defaultFn(() => randomUUID()),
-  conversationId: text("conversation_id").references(() => conversations.id).notNull(),
+export const messages = pgTable("messages", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  conversationId: uuid("conversation_id").references(() => conversations.id).notNull(),
   role: text("role").notNull(), // 'user' or 'assistant'
   content: text("content").notNull(),
   imageUrl: text("image_url"),
   audioUrl: text("audio_url"),
-  metadata: text("metadata", { mode: "json" }), // for storing analysis results, confidence scores, etc.
-  createdAt: integer("created_at", { mode: "timestamp" }).$defaultFn(() => new Date()),
+  metadata: jsonb("metadata"), // for storing analysis results, confidence scores, etc.
+  createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
 export const conversationsRelations = relations(conversations, ({ many, one }) => ({
