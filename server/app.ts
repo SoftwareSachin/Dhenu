@@ -46,7 +46,7 @@ app.use((req, res, next) => {
   let capturedJsonResponse: Record<string, any> | undefined = undefined;
 
   const originalResJson = res.json;
-  res.json = function (bodyJson, ...args) => {
+  res.json = function (bodyJson, ...args) {
     capturedJsonResponse = bodyJson;
     return originalResJson.apply(res, [bodyJson, ...args]);
   };
@@ -96,6 +96,16 @@ app.get("/api/conversations/:id/messages", async (req, res) => {
     res.json(messages);
   } catch (error: any) {
     res.status(500).json({ message: error.message });
+  }
+});
+
+app.post("/api/conversations/:id/messages", async (req, res) => {
+  try {
+    const data = insertMessageSchema.parse({ ...req.body, conversationId: req.params.id });
+    const message = await dbStorage.createMessage(data);
+    res.json(message);
+  } catch (error: any) {
+    res.status(400).json({ message: error.message });
   }
 });
 
@@ -163,10 +173,10 @@ app.get("/api/chat/stream", async (req, res) => {
 
     let fullResponse = "";
 
-    for await (const chunk of generateStreamingChatResponse(chatHistory, language)) {
+    await generateStreamingChatResponse(chatHistory, language, (chunk) => {
       fullResponse += chunk;
       res.write(`data: ${JSON.stringify({ chunk })}\n\n`);
-    }
+    });
 
     try {
       const assistantMessage = await dbStorage.createMessage({
