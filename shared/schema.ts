@@ -58,10 +58,10 @@ export const insertUserSchema = createInsertSchema(users).pick({
   language: true,
 });
 
-export const insertConversationSchema = createInsertSchema(conversations).pick({
-  userId: true,
-  title: true,
-  language: true,
+export const insertConversationSchema = createInsertSchema(conversations).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
 });
 
 export const insertMessageSchema = createInsertSchema(messages).pick({

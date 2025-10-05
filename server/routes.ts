@@ -36,6 +36,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const conversation = await dbStorage.createConversation(data);
       res.json(conversation);
     } catch (error: any) {
+      console.error("Error creating conversation:", error);
       res.status(400).json({ message: error.message });
     }
   });

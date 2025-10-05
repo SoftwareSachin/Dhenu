@@ -55,9 +55,13 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createConversation(insertConversation: InsertConversation): Promise<Conversation> {
+    const cleanedData: any = { ...insertConversation };
+    if (cleanedData.userId === null || cleanedData.userId === undefined) {
+      delete cleanedData.userId;
+    }
     const [conversation] = await db
       .insert(conversations)
-      .values(insertConversation)
+      .values(cleanedData)
       .returning();
     return conversation;
   }
